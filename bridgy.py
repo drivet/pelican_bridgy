@@ -31,7 +31,7 @@ def syndicate(generator):
             r = sendWebmention(source_url, syndicate_target, BRIDGY_ENDPOINT)
             bridgy_response = r.json()
             if r.status_code == requests.codes.created:
-                article.syndication.append(bridgy_response.url)
+                article.syndication.append(bridgy_response['url'])
             else:
                 print('Bridgy webmention failed with ' + str(r.status_code))
                 print('Error information ' + str(bridgy_response))
