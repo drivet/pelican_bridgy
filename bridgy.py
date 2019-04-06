@@ -4,17 +4,20 @@ import requests
 
 
 BRIDGY_ENDPOINT = r'https://brid.gy/publish/webmention'
-PUBLISH_TARGETS = [r'https://brid.gy/publish/twitter',
-                   r'https://brid.gy/publish/flickr',
-                   r'https://brid.gy/publish/github']
+PUBLISH_TARGETS = [r'https://brid.gy/publish/twitter']
 
 syndicated_articles = []
 
 
 def syndicate(generator):
     for article in list(generator.articles):
-        if (not hasattr(article, 'mp_syndicate_to') or not article.mp_syndicate_to) or \
-                (hasattr(article, 'syndication') and article.syndication):
+        if not hasattr(article, 'mp_syndicate_to'):
+            article.mp_syndicate_to = ''
+
+        if not hasattr(article, 'syndication'):
+            article.syndication = ''
+
+        if not article.mp_syndicate_to or article.syndication:
             continue
 
         article.syndication = []
