@@ -13,7 +13,8 @@ syndicated_articles = []
 
 def syndicate(generator):
     for article in list(generator.articles):
-        if not article.mp_syndicate_to or article.syndication:
+        if (not hasattr(article, 'mp_syndicate_to') or not article.mp_syndicate_to) or \
+                (hasattr(article, 'syndication') and article.syndication):
             continue
 
         article.syndication = []
