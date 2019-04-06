@@ -30,7 +30,7 @@ def syndicate(generator):
             if r.status_code == requests.codes.created:
                 article.syndication.append(bridgy_response.url)
             else:
-                print('Bridgy webmention failed with ' + r.status_code)
+                print('Bridgy webmention failed with ' + str(r.status_code))
                 print('Error information ' + str(bridgy_response))
         else:
             print('no matching syndication targets')
