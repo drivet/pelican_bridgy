@@ -18,9 +18,13 @@ def syndicate(generator):
             continue
 
         article.syndication = []
-        for syndicate_target in [t for t in article.mp_syndicate_to
+        for syndicate_target in [t for t in article.mp_syndicate_to.split(',')
                                  if t in PUBLISH_TARGETS]:
-            source_url = generator.settings.SITEURL + '/' + article.url
+            source_url = generator.settings['SITEURL'] + '/' + article.url
+            if article.category == 'notes':
+                syndicate_target += '?bridgy_omit_link=true'
+
+            print('sending web mention from ' + source_url + " to " + syndicate_target + " using " + BRIDGY_ENDPOINT )
             r = sendWebmention(source_url, syndicate_target, BRIDGY_ENDPOINT)
             bridgy_response = r.json()
             if r.status_code == requests.codes.created:
@@ -28,6 +32,8 @@ def syndicate(generator):
             else:
                 print('Bridgy webmention failed with ' + r.status_code)
                 print('Error information ' + str(bridgy_response))
+        else:
+            print('no matching syndication targets')
 
         if article.syndication:
             syndicated_articles.append(article)
@@ -48,4 +54,4 @@ def save_syndication(p):
 
 def register():
     signals.article_generator_finalized.connect(syndicate)
-    signals.finalized.connect(save_syndication)
+    #signals.finalized.connect(save_syndication)
