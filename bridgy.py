@@ -33,6 +33,7 @@ def syndicate(generator):
 
 
 def save_syndication(p):
+    print('calling save_syndication')
     for article in syndicated_articles:
         print('opening ' + article.source_file)
         with open(article.source_file, 'r') as f:
