@@ -40,13 +40,9 @@ def syndicate(generator, writer):
             if article.category == 'notes':
                 syndicate_target += '?bridgy_omit_link=true'
             r = send_webmention(source_url, syndicate_target)
-
             if r and r.status_code == requests.codes.created:
                 bridgy_response = r.json()
                 article.syndication.append(bridgy_response['url'])
-            else:
-                print('Bridgy webmention failed with ' + str(r.status_code))
-                print('Error information ' + str(r.json()))
 
         if article.syndication:
             syndicated_articles.append(article)
@@ -59,7 +55,11 @@ def send_webmention(source_url, target_url):
         print(source_url + ' is not accessible.  Skipping webmention')
         return None
     print('sending web mention from ' + source_url + " to " + target_url + " using " + BRIDGY_ENDPOINT)
-    return sendWebmention(source_url, target_url, BRIDGY_ENDPOINT)
+    r = sendWebmention(source_url, target_url, BRIDGY_ENDPOINT)
+    if r.status_code != requests.codes.created:
+        print('Bridgy webmention failed with ' + str(r.status_code))
+        print('Error information ' + str(r.json()))
+    return r
 
 
 def save_syndication(p):
@@ -93,7 +93,7 @@ def b64encode(s):
 
 def wait_for_url(url):
     timeout_secs = 15
-    wait_secs = 0.1
+    wait_secs = 1
     started = time.time()
 
     done = False
@@ -110,7 +110,7 @@ def wait_for_url(url):
             done = True
             found = False
         else:
-            print('sleeping...')
+            print('sleeping...', flush=True)
             time.sleep(wait_secs)
     return found
 
