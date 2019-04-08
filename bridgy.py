@@ -5,6 +5,7 @@ import requests
 import os
 import base64
 import json
+import time
 
 
 WEBSITE = 'website'
@@ -38,9 +39,7 @@ def syndicate(generator, writer):
             source_url = generator.settings['SITEURL'] + '/' + article.url
             if article.category == 'notes':
                 syndicate_target += '?bridgy_omit_link=true'
-
-            print('sending web mention from ' + source_url + " to " + syndicate_target + " using " + BRIDGY_ENDPOINT)
-            r = sendWebmention(source_url, syndicate_target, BRIDGY_ENDPOINT)
+            r = send_webmention(source_url, syndicate_target)
             bridgy_response = r.json()
             if r.status_code == requests.codes.created:
                 article.syndication.append(bridgy_response['url'])
@@ -50,6 +49,15 @@ def syndicate(generator, writer):
 
         if article.syndication:
             syndicated_articles.append(article)
+
+
+def send_webmention(source_url, target_url):
+    print('waiting for ' + source_url + ' to be accessible...')
+    if not wait_for_url(source_url):
+        print(source_url + ' is not accessible.  Skipping webmention')
+        return
+    print('sending web mention from ' + source_url + " to " + target_url + " using " + BRIDGY_ENDPOINT)
+    return sendWebmention(source_url, target_url, BRIDGY_ENDPOINT)
 
 
 def save_syndication(p):
@@ -79,6 +87,26 @@ def b64decode(s):
 
 def b64encode(s):
     return base64.b64encode(s.encode()).decode()
+
+
+def wait_for_url(url):
+    timeout_secs = 15
+    wait_secs = 0.1
+    started = time.time()
+
+    done = False
+    found = False
+    while not done:
+        r = requests.head(url)
+        if r.status_code == 200:
+            done = True
+            found = True
+        elif (time.time() - started) >= timeout_secs:
+            done = True
+            found = False
+        else:
+            time.sleep(wait_secs)
+    return found
 
 
 def register():
