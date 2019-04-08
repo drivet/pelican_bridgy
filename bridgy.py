@@ -40,22 +40,24 @@ def syndicate(generator, writer):
             if article.category == 'notes':
                 syndicate_target += '?bridgy_omit_link=true'
             r = send_webmention(source_url, syndicate_target)
-            bridgy_response = r.json()
-            if r.status_code == requests.codes.created:
+
+            if r and r.status_code == requests.codes.created:
+                bridgy_response = r.json()
                 article.syndication.append(bridgy_response['url'])
             else:
                 print('Bridgy webmention failed with ' + str(r.status_code))
-                print('Error information ' + str(bridgy_response))
+                print('Error information ' + str(r.json()))
 
         if article.syndication:
             syndicated_articles.append(article)
 
 
 def send_webmention(source_url, target_url):
+    print('preparing to send webmention from ' + source_url + ' to ' + target_url)
     print('waiting for ' + source_url + ' to be accessible...')
     if not wait_for_url(source_url):
         print(source_url + ' is not accessible.  Skipping webmention')
-        return
+        return None
     print('sending web mention from ' + source_url + " to " + target_url + " using " + BRIDGY_ENDPOINT)
     return sendWebmention(source_url, target_url, BRIDGY_ENDPOINT)
 
@@ -97,14 +99,18 @@ def wait_for_url(url):
     done = False
     found = False
     while not done:
+        print('requesting head from ' + url)
         r = requests.head(url)
         if r.status_code == 200:
+            print('found head from ' + url)
             done = True
             found = True
         elif (time.time() - started) >= timeout_secs:
+            print('timeout for ' + url)
             done = True
             found = False
         else:
+            print('sleeping...')
             time.sleep(wait_secs)
     return found
 
