@@ -14,6 +14,7 @@ WEBSITE_CONTENTS = 'https://api.github.com/repos/drivet/' + WEBSITE + '/contents
 BRIDGY_ENDPOINT = r'https://brid.gy/publish/webmention'
 PUBLISH_TARGETS = [r'https://brid.gy/publish/twitter']
 
+articles_to_syndicate = []
 syndicated_articles = []
 
 
@@ -29,7 +30,7 @@ def fix_metadata(generator, metadata):
         metadata['syndication'] = metadata['syndication'].split(',')
 
 
-def syndicate(generator, writer):
+def find_articles_to_syndicate(generator):
     for article in list(generator.articles):
         # skip if we do not want to syndicate, or we have already syndicated
         if not article.mp_syndicate_to or article.syndication:
@@ -39,10 +40,18 @@ def syndicate(generator, writer):
             source_url = generator.settings['SITEURL'] + '/' + article.url
             if article.category == 'notes':
                 syndicate_target += '?bridgy_omit_link=true'
-            r = send_webmention(source_url, syndicate_target)
-            if r and r.status_code == requests.codes.created:
-                bridgy_response = r.json()
-                article.syndication.append(bridgy_response['url'])
+            articles_to_syndicate.append([source_url, syndicate_target, article])
+
+
+def syndicate(p):
+    for link in articles_to_syndicate:
+        source_url = link[0]
+        syndicate_target = link[1]
+        article = link[2]
+        r = send_webmention(source_url, syndicate_target)
+        if r and r.status_code == requests.codes.created:
+            bridgy_response = r.json()
+            article.syndication.append(bridgy_response['url'])
 
         if article.syndication:
             syndicated_articles.append(article)
@@ -117,5 +126,6 @@ def wait_for_url(url):
 
 def register():
     signals.article_generator_context.connect(fix_metadata)
-    signals.article_writer_finalized.connect(syndicate)
+    signals.article_generator_finalized.connect(find_articles_to_syndicate)
+    signals.finalized.connect(syndicate)
     signals.finalized.connect(save_syndication)
