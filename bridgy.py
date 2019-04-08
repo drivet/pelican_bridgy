@@ -28,7 +28,7 @@ def fix_metadata(generator, metadata):
         metadata['syndication'] = metadata['syndication'].split(',')
 
 
-def syndicate(generator):
+def syndicate(generator, writer):
     for article in list(generator.articles):
         # skip if we do not want to syndicate, or we have already syndicated
         if not article.mp_syndicate_to or article.syndication:
@@ -83,5 +83,5 @@ def b64encode(s):
 
 def register():
     signals.article_generator_context.connect(fix_metadata)
-    signals.article_generator_finalized.connect(syndicate)
+    signals.article_writer_finalized.connect(syndicate)
     signals.finalized.connect(save_syndication)
