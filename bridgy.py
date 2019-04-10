@@ -78,7 +78,7 @@ def save_syndication(p):
         fetch_request = requests.get(url, auth=(os.environ['USERNAME'], os.environ['PASSWORD']))
 
         if fetch_request.status_code != 200:
-            raise Exception('failed to fetch ' + url + ' from github, code: ' + fetch_request.status_code)
+            raise Exception('failed to fetch ' + url + ' from github, code: ' + str(fetch_request.status_code))
 
         response = fetch_request.json()
         contents = b64decode(response['content'])
@@ -89,7 +89,7 @@ def save_syndication(p):
                                                     'content': b64encode(new_contents),
                                                     'sha': response['sha']}))
         if put_request.status_code != 201:
-            raise Exception('failed to put article ' + url + ' on github, code: ' + put_request.status_code)
+            raise Exception('failed to put article ' + url + ' on github, code: ' + str(put_request.status_code))
 
 
 def b64decode(s):
