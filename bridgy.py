@@ -75,21 +75,21 @@ def save_syndication(p):
     for article in syndicated_articles:
         path = os.path.relpath(article.source_path, p.settings['PATH'])
         url = WEBSITE_CONTENTS + path
-        fetch_request = requests.get(url, auth=(os.environ['USERNAME'], os.environ['PASSWORD']))
+        fetch_response = requests.get(url, auth=(os.environ['USERNAME'], os.environ['PASSWORD']))
 
-        if not fetch_request.status_code.ok:
-            raise Exception('failed to fetch ' + url + ' from github, code: ' + str(fetch_request.status_code))
+        if not fetch_response.ok:
+            raise Exception('failed to fetch ' + url + ' from github, code: ' + str(fetch_response.status_code))
 
-        response = fetch_request.json()
+        response = fetch_response.json()
         contents = b64decode(response['content'])
         pieces = contents.split('\n\n', 1)
         new_contents = pieces[0] + '\nsyndication: ' + ','.join(article.syndication) + '\n\n' + pieces[1]
-        put_request = requests.put(url, auth=(os.environ['USERNAME'], os.environ['PASSWORD']),
-                                   data=json.dumps({'message': 'post to ' + path,
-                                                    'content': b64encode(new_contents),
-                                                    'sha': response['sha']}))
-        if not put_request.status_code.ok:
-            raise Exception('failed to put article ' + url + ' on github, code: ' + str(put_request.status_code))
+        put_response = requests.put(url, auth=(os.environ['USERNAME'], os.environ['PASSWORD']),
+                                    data=json.dumps({'message': 'post to ' + path,
+                                                     'content': b64encode(new_contents),
+                                                     'sha': response['sha']}))
+        if not put_response.ok:
+            raise Exception('failed to put article ' + url + ' on github, code: ' + str(put_response.status_code))
 
 
 def b64decode(s):
@@ -110,7 +110,7 @@ def wait_for_url(url):
     while not done:
         print('requesting head from ' + url)
         r = requests.head(url)
-        if r.status_code.ok:
+        if r.ok:
             print('found head from ' + url)
             done = True
             found = True
