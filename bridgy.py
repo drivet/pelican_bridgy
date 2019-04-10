@@ -77,7 +77,7 @@ def save_syndication(p):
         url = WEBSITE_CONTENTS + path
         fetch_request = requests.get(url, auth=(os.environ['USERNAME'], os.environ['PASSWORD']))
 
-        if fetch_request.status_code != 200:
+        if not fetch_request.status_code.ok:
             raise Exception('failed to fetch ' + url + ' from github, code: ' + str(fetch_request.status_code))
 
         response = fetch_request.json()
@@ -88,7 +88,7 @@ def save_syndication(p):
                                    data=json.dumps({'message': 'post to ' + path,
                                                     'content': b64encode(new_contents),
                                                     'sha': response['sha']}))
-        if put_request.status_code != 201:
+        if not put_request.status_code.ok:
             raise Exception('failed to put article ' + url + ' on github, code: ' + str(put_request.status_code))
 
 
@@ -110,7 +110,7 @@ def wait_for_url(url):
     while not done:
         print('requesting head from ' + url)
         r = requests.head(url)
-        if r.status_code == 200:
+        if r.status_code.ok:
             print('found head from ' + url)
             done = True
             found = True
