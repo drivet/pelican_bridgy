@@ -1,3 +1,4 @@
+import mf2util
 from pelican import signals
 
 from ronkyuu import sendWebmention
@@ -6,6 +7,7 @@ import os
 import base64
 import json
 import time
+import yaml
 
 
 WEBSITE = 'website'
@@ -16,6 +18,13 @@ PUBLISH_TARGETS = [r'https://brid.gy/publish/twitter']
 
 articles_to_syndicate = []
 syndicated_articles = []
+
+
+class Webmentions(object):
+    def __init__(self):
+        self.likes = []
+        self.replies = []
+        self.reposts = []
 
 
 def fix_metadata(generator, metadata):
@@ -124,8 +133,47 @@ def wait_for_url(url):
     return found
 
 
+def setup_webmentions(generator, metadata):
+    metadata['webmentions'] = Webmentions()
+
+
+def process_webmentions(generator):
+    for article in list(generator.articles):
+        webmentions_path = os.path.join(generator.settings['PATH'],
+                                        generator.settings['WEBMENTION_PATH'],
+                                        article.slug)
+        for filename in os.listdir(webmentions_path):
+            webmention = load_webmention(filename)
+            if webmention:
+                attach_webmention(article, webmention)
+
+
+def attach_webmention(article, webmention):
+    comment = mf2util.interpret_comment(webmention, None, [])
+    comment_type = comment['comment_type'][0]
+    if comment_type == 'like':
+        article.webmentions.likes = comment
+    elif comment_type == 'repost':
+        article.webmentions.reposts = comment
+    elif comment_type == 'reply':
+        article.webmentions.replies = comment
+    else:
+        print('Unrecognized comment type: ' + comment_type)
+
+
+def load_webmention(filename):
+    with open(filename) as f:
+        try:
+            return yaml.safe_load(f)
+        except yaml.YAMLError as exc:
+            print("Trouble opening YAML file " + filename + ', error = ' + str(exc))
+            return None
+
+
 def register():
     signals.article_generator_context.connect(fix_metadata)
+    signals.article_generator_context.connect(setup_webmentions)
     signals.article_generator_finalized.connect(find_articles_to_syndicate)
+    signals.article_generator_finalized.connect(process_webmentions)
     signals.finalized.connect(syndicate)
     signals.finalized.connect(save_syndication)
